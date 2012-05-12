@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BMI Calculator</title>
+<script type="text/javascript" src="d3.v2.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script src= "http://documentcloud.github.com/underscore/underscore.js"></script>
+<style type="text/css">
+
+  .center
+  {
+  margin-left:auto;
+  margin-right:auto;
+  width:75em;
+  font-family:Verdana;
+  font-size: 07pt;
+  }
+
+  
+
+//Ian's D3 Barchart
+
+.bar rect
+        
+        /*
+        .label
+        {
+            font-family: Verdana;
+            font-size: 07pt;
+            color: white;
+            text-align:right;
+            fill-opacity: .5;
+        }
+        .value
+        {
+            font-family: Verdana;
+            font-size: 07pt;
+            color: white;
+            font-weight:bold;
+            text-align:right;
+            fill-opacity: .1;
+        }
+
+        .tick_label
+        {
+            font-size: 07pt;
+            font-family: Verdana;
+            color: white;
+            fill-opacity: .6;
+        }
+*/
+
+
+
+
+    </style>
+
+</head>
+<body>
+  <div class = "center">
+<form method="post">
+    Height: <input type="number" name="Height in Inches" value="" size="4" maxlength="4" id="weight" />
+    Weight: <input type="number" name="Weight in Pounds" value="" size="5" maxlength="5" id="height"/>
+    Age: <input type="number" name="Age" value="" size="25" maxlength="3" id="age"/>
+    <input type="submit" name="submit" value="calculate BMI" />
+</form>    
+
+<h1 id="bmiReturn">
+</h1>
+ 
+
+
+<ul id="bmiList">
+
+</ul>
+
+</div>
+
+
+
+<script>  
+//callback to form
+
+$(document).ready( function (e) {
+    $('form').submit(function (e) { 
+        var age = $('#age').val();
+        var height = $('#height').val();
+        var weight = $('#weight').val();        
+        $("#bmiReturn").text(calcBmi(height,weight));
+        return false;              
+	})
+});
+
+//calculate BMI with weight and height
+function calcBmi (height, weight){
+    return(Math.round((weight/(height*height)*703)*100)/100);
+ };
+
+var height = 5;
+var weight = 10;
+var yourBmi = calcBmi(height,weight);
+
+
+//takes csv and turns into a list of objects
+/*
+d3.csv("MLBWeightHeightStats",function(data){
+  data = data.slice(0,5)
+  $.each(data, function(i,player){
+  	var bmi = calcBmi(player["Height(inches)"], player["Weight(pounds)"]);
+  	data[i]["bmi"] = bmi;
+	$("#bmiList").append("<li>" + player.Name + ": " + bmi + "</li>")
+  })
+ 
+  window.data = data;
+})
+*/
+
+
+
+//Ian's D3 Barchart
+
+
+  //maximum of data you want to use
+  var data_max = 35,
+
+  //number of tickmarks to use
+  num_ticks = 5,
+
+  //margins
+  left_margin = 100,
+  right_margin = 60,
+  top_margin = 30,
+  bottom_margin = 0;
+
+
+  var w = 500,                        //width
+      h = 200,                        //height
+      color = function(id) { return '#4682B4' };
+            
+  d3.csv("MLBWeightHeightStats", function(data) {
+    data = data.slice (0,10)
+    $.each(data, function(i,d){
+      var bmi = calcBmi(d["Height(inches)"], d["Weight(pounds)"]);
+      data[i]["bmi"] = bmi;
+    }) 
+//sort by the value of what the function returns
+    data = _(data)
+      .chain()
+      .sortBy(function(d){
+        return d.bmi
+      })
+      .map(function(d){
+        d.Name=d.Name.replace("_"," ");
+        return d
+      })
+      .value()
+
+    $('#ok').click(function() {
+      data.push(mybmi);
+      //to ge transitions to work data binding is important
+      //second functino like a key, functoint hat returns the name
+
+    })
+
+    var x = d3.scale.linear()
+        .domain([0, data_max])
+        .range([0, w - ( left_margin + right_margin ) ]),
+        y = d3.scale.ordinal()
+        .domain(d3.range(data.length))
+        .rangeBands([bottom_margin, h - top_margin], .2);
+
+
+    var chart_top = h - y.rangeBand()/2 - top_margin;
+    var chart_bottom = bottom_margin + y.rangeBand()/2;
+    var chart_left = left_margin;
+    var chart_right = w - right_margin;
+
+    /*
+     *  Setup the SVG element and position it
+     */
+    var vis = d3.select("body")
+        .append("svg:svg")
+            .attr("width", w)
+            .attr("height", h)
+        .append("svg:g")
+            .attr("id", "barchart")
+            .attr("class", "barchart")
+
+/*
+    //Ticks
+    var rules = vis.selectAll("g.rule")
+        .data(x.ticks(num_ticks))
+    .enter()
+        .append("svg:g")
+        .attr("transform", function(d)
+                {
+                return "translate(" + (chart_left + x(d)) + ")";});
+    rules.append("svg:line")
+        .attr("class", "tick")
+        .attr("y1", chart_top)
+        .attr("y2", chart_top + 4)
+        .attr("stroke", "black");
+
+    rules.append("svg:text")
+        .attr("class", "tick_label")
+        .attr("text-anchor", "middle")
+        .attr("y", chart_top)
+        .text(function(d)
+        {
+        return d;
+        });
+    var bbox = vis.selectAll(".tick_label").node().getBBox();
+    vis.selectAll(".tick_label")
+    .attr("transform", function(d)
+            {
+            return "translate(0," + (bbox.height) + ")";
+            });
+*/
+    var bars = vis.selectAll("g.bar")
+        .data(data)
+    .enter()
+        .append("svg:g")
+            .attr("class", "bar")
+            .attr("transform", function(d, i) { 
+                    return "translate(0, " + y(i) + ")"; });
+
+    bars.append("svg:rect")
+        .attr("x", left_margin)
+        .attr("width", function(d) {
+                return (x(d.bmi));
+                })
+        .attr("height", y.rangeBand())
+        .attr("fill", color(0))
+        .attr("stroke", color(0));
+
+
+    //Labels
+    var labels = vis.selectAll("g.bar")
+        .append("svg:text")
+            .attr("class", "label")
+            .attr("x", left_margin)
+            .attr("fill", "white")
+            .attr("font-family","sans-serif")
+            .attr("font-size", 10)
+            .attr("text-anchor", "end" + 10)
+            .text(function(d) {
+                    return d.Name;
+                    });
+
+    var bbox = labels.node().getBBox();
+    vis.selectAll(".label")
+        .attr("transform", function(d) {
+                return "translate(0, " + (y.rangeBand()/2 + bbox.height/4) + ")";
+                });
+
+
+    labels = vis.selectAll("g.bar")
+        .append("svg:text")
+        .attr("class", "value")
+        .attr("x", function(d)
+                {
+                return x(d.bmi) + left_margin;
+                })
+        .attr("text-anchor", "end")
+        .attr("font-family","sans-serif")
+        .attr("font-size", 10)
+        
+        .attr("fill","white")
+        .text(function(d)
+        {
+        return "" + d.bmi;
+        });
+
+    bbox = labels.node().getBBox();
+    vis.selectAll(".value")
+        .attr("transform", function(d)
+        {
+            return "translate(0, " + (y.rangeBand()/2 + bbox.height/4) + ")";
+        });
+/*
+    //Axes
+    vis.append("svg:line")
+        .attr("class", "axes")
+        .attr("x1", chart_left)
+        .attr("x2", chart_left)
+        .attr("y1", chart_bottom)
+        .attr("y2", chart_top)
+        .attr("stroke", "white");
+     vis.append("svg:line")
+        .attr("class", "axes")
+        .attr("x1", chart_left)
+        .attr("x2", chart_right)
+        .attr("y1", chart_top)
+        .attr("y2", chart_top)
+        .attr("stroke", "white");
+*/
+
+});
+
+
+/*
+//case statements for how good or bad bmi is
+
+if (bmi < 18)
+    alert("Your BMI is a bit low at " + bmi);
+else if (x < 25)
+    alert("Your BMI looks good at " + bmi);
+else 
+    alert ("Your BMI is a bit high " + bmi);
+
+*/
+
+</script>
+</body>
+</html>
